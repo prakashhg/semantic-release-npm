@@ -1,2 +1,2 @@
-// An example of a patch release
+// An example of a minor
 console.log("Hello, world!!");

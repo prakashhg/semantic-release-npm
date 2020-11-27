@@ -1,2 +1,2 @@
-// An example of a minor
+// An example of a major release
 console.log("Hello, world!!");

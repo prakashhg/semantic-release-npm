@@ -5,7 +5,7 @@
 
 An example project that uses [semantic-release](https://github.com/semantic-release/semantic-release) to automate the publishing of NPM packages to [GitLab's Package Registry](https://docs.gitlab.com/ee/user/packages/npm_registry/index.html).
 
-See the auto-generated release on the [**Releases** page](https://gitlab.com/gitlab-examples/semantic-release-npm/-/releases) and the auto-published NPM packages on the [**Packages** page](https://gitlab.com/gitlab-examples/semantic-release-npm/-/packages).
+See the auto-generated releases on the [**Releases** page](https://gitlab.com/gitlab-examples/semantic-release-npm/-/releases) and the auto-published NPM packages on the [**Packages** page](https://gitlab.com/gitlab-examples/semantic-release-npm/-/packages).
 
 A step-by-step guide can be found in [GitLab's CI/CD examples documentation](https://docs.gitlab.com/ee/ci/examples/semantic-release.html).
 

@@ -1,6 +1,6 @@
 {
   "name": "@gitlab-examples/semantic-release-npm",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A project that uses semantic-release to automate the publishing of NPM packages to GitLab's Package Registry",
   "main": "index.js",
   "files": [

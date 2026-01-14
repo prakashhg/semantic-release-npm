@@ -1,12 +1,72 @@
+
+# Build & push npm package to GitLab Package Registry on tags
+# Uses project-level endpoint + CI_JOB_TOKEN (recommended by GitLab)
+
 default:
-  image: node:latest
+  image: node:20
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .npm/
 
 stages:
-  - deploy
+  - build
+  - test
+  - publish
 
-publish-npm:
-  stage: deploy
+# Prepare an .npmrc that points to THIS project's npm registry and authenticates with CI_JOB_TOKEN
+# GitLab docs pattern: write a project-level endpoint + token into .npmrc
+# https://docs.gitlab.com/user/packages/npm_registry/
+.before_npmrc: &before_npmrc
+  before_script:
+    - node --version
+    - npm ci --cache .npm --prefer-offline
+    # Append project-level registry + token to .npmrc (no secrets needed)
+    - |
+      {
+        echo "${CI_API_V4_URL#https?}/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=\${CI_JOB_TOKEN}"
+      } >> .npmrc
+
+build:
+  stage: build
+  <<: *before_npmrc
   script:
-    - echo "@scope:registry=https://${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/packages/npm/" > .npmrc
-    - echo "//${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=${CI_JOB_TOKEN}" >> .npmrc
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 day
+
+test:
+  stage: test
+  <<: *before_npmrc
+  script:
+    - npm test --if-present
+
+# Publish on tags: we set the version from the tag and publish to this project's registry
+publish:
+  stage: publish
+  # Run only on tags (e.g., v1.2.3 or 1.2.3)
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: on_success
+    - when: never
+  before_script:
+    # Minimal install (no dev deps needed for publish)
+    - node --version
+    - npm ci --omit=dev --cache .npm --prefer-offline
+    # Configure .npmrc to authenticate against project-level registry with CI_JOB_TOKEN
+    - |
+      {
+        echo "${CI_API_V4_URL#https?}/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=\${CI_JOB_TOKEN}"
+      } >> .npmrc
+  script:
+    # If your tag starts with "v", strip it (v1.2.3 -> 1.2.3) and set package.json version without re-tagging
+    - |
+      VER="${CI_COMMIT_TAG#v}"
+      echo "Publishing version: $VER"
+      npm version "$VER" --no-git-tag-version
+    # Optionally enforce your registry (not required since .npmrc is set)
+    # npm publish --registry "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/"
     - npm publish
+``

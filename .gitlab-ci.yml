@@ -69,4 +69,3 @@ publish:
     # Optionally enforce your registry (not required since .npmrc is set)
     # npm publish --registry "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/"
     - npm publish
-``

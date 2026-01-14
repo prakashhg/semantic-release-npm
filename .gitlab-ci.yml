@@ -17,7 +17,7 @@ workflow:
     - if: $CI_COMMIT_BRANCH
 
 variables:
-  NPM_TOKEN: ${CI_JOB_TOKEN}
+  NPM_TOKEN: "glpat-xQZMsk03TvhLFAGZMAh7hm86MQp1Omo3Mml5Cw.01.121utkgiz"
 
 stages:
   - release

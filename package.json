@@ -8,7 +8,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://gitlab.com/gitlab-examples/semantic-release-npm.git"
+    "url": "https://gitlab.com/prakashguruswamy24-group/semantic-release-npm.git"
   },
   "keywords": [
     "gitlab",
@@ -18,12 +18,12 @@
     "semantic-release",
     "node"
   ],
-  "author": "Nathan Friend <nathan@gitlab.com>",
+  "author": "Nathan Friend <prakashguruswamy24@gmail.com",
   "license": "MIT",
   "bugs": {
-    "url": "https://gitlab.com/gitlab-examples/semantic-release-npm/-/issues"
+    "url": "https://gitlab.com/prakashguruswamy24-group/semantic-release-npm/-/issues"
   },
-  "homepage": "https://gitlab.com/gitlab-examples/semantic-release-npm#readme",
+  "homepage": "https://gitlab.com/prakashguruswamy24-group/semantic-release-npm#readme",
   "publishConfig": {
     "access": "public"
   },

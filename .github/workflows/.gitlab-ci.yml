@@ -1,0 +1,38 @@
+name: prakashguruswamy24-group/semantic-release-npm
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    container:
+      image: docker:24-cli
+    if: ${{ github.event_name }} == "push" || ${{ github.event_name }} == "merge_request_event"
+    services:
+      docker:24-dind:
+        image: docker:24-dind
+        options: docker:24-dind --tls=false
+    env:
+      DOCKER_TLS_CERTDIR: ''
+      DOCKER_HOST: tcp://docker:2375
+      DOCKER_DRIVER: overlay2
+      DEFAULT_BRANCH: "$CI_DEFAULT_BRANCH"
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - run: echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - run: |
+        if [[ -n "${{ github.ref }}" ]]; then
+          EXPORT_TAG="${{ github.ref }}"
+        elif [[ "${{ github.ref }}" == "$DEFAULT_BRANCH" ]]; then
+          EXPORT_TAG="latest"
+        else
+          EXPORT_TAG="${{ github.ref }}"
+        fi
+        echo "USING TAG: $EXPORT_TAG"
+        echo "EXPORT_TAG=$EXPORT_TAG" >> $CI_JOB_STAGE # no-op; just for logs
+    - run: docker build --pull -t "$CI_REGISTRY_IMAGE:$EXPORT_TAG" -t "$CI_REGISTRY_IMAGE:${{ github.sha }}" .
+    - run: docker push "$CI_REGISTRY_IMAGE:$EXPORT_TAG"
+    - run: docker push "$CI_REGISTRY_IMAGE:${{ github.sha }}"
+    - run: echo "Pushed:"
+    - run: echo " - $CI_REGISTRY_IMAGE:$EXPORT_TAG"
+    - run: echo " - $CI_REGISTRY_IMAGE:${{ github.sha }}"

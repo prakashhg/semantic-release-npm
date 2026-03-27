@@ -1,0 +1,44 @@
+# .github/workflows/ci.yml
+name: ci
+on:
+  pull_request:
+  push: { branches: [main] }
+
+jobs:
+  login:
+    uses: ./.github/workflows/azure-login.yml
+
+  unit-tests:
+    needs: login
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r requirements.txt
+      - run: pytest -q
+
+  codeql:
+    needs: login
+    uses: github/codeql-action/.github/workflows/codeql.yml@v3
+    with:
+      languages: 'python,javascript-typescript'
+  # CodeQL helps you detect security and code quality issues and surfaces
+  # alerts in PRs. [8](https://github.com/MicrosoftDocs/azure-dev-docs/blob/main/articles/github/github-actions-key-vault.md)
+
+  eval:
+    name: promptflow-eval
+    needs: [login, unit-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Offline evaluation of your agent/flow as a merge gate (preview action).
+      - name: Run offline evaluation
+        uses: azure/ai-foundry-evaluation-action@v1
+        with:
+          azure-ai-project-endpoint: ${{ secrets.AZURE_AI_PROJECT_ENDPOINT }}
+          deployment-name: gpt-4o                  # your model deployment name
+          data-path: ./.eval/evalset.jsonl         # your dataset
+          agent-ids: DevCopilot:latest
+          fail-threshold: "quality>=0.75 && safety>=0.95"
+  # Foundry evaluation Action lets you fail PRs if quality/safety regress. [9](https://ancuta.org/posts/github-actions-security-hardening-with-openid-connect/)

@@ -1,0 +1,64 @@
+# .github/workflows/issue-autofix.yml
+name: issue-autofix
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  id-token: write        # OIDC to Azure
+  contents: write        # push a branch
+  pull-requests: write   # open a PR
+  issues: read
+
+jobs:
+  maybe-fix:
+    if: |
+      github.event.action == 'opened' ||
+      (github.event.action == 'labeled' &&
+       contains(github.event.issue.labels.*.name, 'autofix'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      # OIDC token issuance requires id-token: write permissions. [2](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers)
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install azure-identity azure-ai-projects azure-ai-agents pygit2
+
+      - name: Generate patch with AutoFixAgent
+        id: gen
+        env:
+          AZURE_AI_PROJECT_ENDPOINT: ${{ secrets.AZURE_AI_PROJECT_ENDPOINT }}
+          ISSUE_TITLE:  ${{ github.event.issue.title }}
+          ISSUE_BODY:   ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          python scripts/auto_fix_issue.py > patch.out
+          echo "PATCH_STATUS=$(head -1 patch.out)" >> $GITHUB_ENV
+
+      - name: Apply patch, test, and open PR
+        if: env.PATCH_STATUS == 'OK'
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BR="autofix/issue-${ISSUE_NUMBER}"
+          git checkout -b "$BR"
+          tail -n +2 patch.out | git apply -p0 -v --reject || true
+          # run your repo's unit tests here before committing, e.g.:
+          # pip install -r requirements.txt && pytest -q
+          git add -A
+          git commit -m "Auto fix for #${ISSUE_NUMBER}"
+          git push origin "$BR"
+          gh pr create --title "Auto-fix: #${ISSUE_NUMBER}" \
+                       --body "This PR addresses issue #${ISSUE_NUMBER}. Fixes #${ISSUE_NUMBER}" \
+                       --base main --head "$BR"

@@ -1,0 +1,16 @@
+# .github/workflows/_azure-login.yml
+name: azure-login
+on:
+  workflow_call:
+jobs:
+  login:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write    # allow OIDC JWT issuance
+      contents: read
+    steps:
+      - uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
